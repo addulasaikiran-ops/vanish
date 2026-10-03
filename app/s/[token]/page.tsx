@@ -119,10 +119,10 @@ export default function SharePage({
   }
 
   async function copyText() {
-    if (!data) return;
+    const share = data;
+    if (!share) return;
     try {
-      const textToCopy = data.text;
-      await navigator.clipboard.writeText(textToCopy);
+      await navigator.clipboard.writeText(share.text);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
