@@ -1,0 +1,2 @@
+ALTER TABLE "Share"
+ADD COLUMN "deleteAfterFirstView" BOOLEAN NOT NULL DEFAULT false;

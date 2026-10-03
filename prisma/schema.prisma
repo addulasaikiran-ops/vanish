@@ -8,14 +8,15 @@ datasource db {
 }
 
 model Share {
-  id          String    @id @default(cuid())
-  tokenHash   String    @unique
-  ciphertext  String
-  iv          String
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime
-  destroyedAt DateTime?
-  status      String    @default("active")
+  id                   String    @id @default(cuid())
+  tokenHash            String    @unique
+  ciphertext           String
+  iv                   String
+  createdAt            DateTime  @default(now())
+  expiresAt            DateTime
+  destroyedAt          DateTime?
+  status               String    @default("active")
+  deleteAfterFirstView Boolean   @default(false)
 
   @@index([expiresAt])
 }
