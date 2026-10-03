@@ -28,21 +28,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await prisma.share.deleteMany({
-      where: {
-        expiresAt: {
-          lte: new Date(),
-        },
-      },
-    });
+    const [shares, rateLimits] = await Promise.all([
+      prisma.share.deleteMany({
+        where: { expiresAt: { lte: new Date() } },
+      }),
+      prisma.$executeRawUnsafe(
+        'DELETE FROM "RateLimit" WHERE "expiresAt" <= NOW()'
+      ),
+    ]);
 
     return NextResponse.json({
       success: true,
-      deleted: result.count,
+      deleted: shares.count,
+      rateLimitBucketsDeleted: rateLimits,
     });
-  } catch (error) {
-    console.error("CLEANUP ERROR:", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Cleanup failed" },
       { status: 500 }

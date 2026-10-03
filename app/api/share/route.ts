@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import crypto from "crypto";
 import { getExpiryMilliseconds } from "@/lib/expiry";
+import {
+  MAX_CIPHERTEXT_BYTES,
+  MAX_SHARE_REQUEST_BODY_BYTES,
+} from "@/lib/limits";
+import { getClientIp, consumeRateLimit } from "@/lib/rate-limit";
+import { readRequestText } from "@/lib/request";
 import { prisma } from "@/lib/db";
 
 type EncryptedShareBody = {
@@ -17,16 +23,53 @@ type ReturnedShare = {
   expiresAt: Date;
 };
 
+function isBase64Url(value: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(value);
+}
+
+function decodedBase64UrlLength(value: string): number {
+  return Math.floor((value.length * 3) / 4);
+}
+
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as Partial<EncryptedShareBody>;
+    const allowed = await consumeRateLimit(
+      getClientIp(request),
+      "share:create",
+      10,
+      10 * 60 * 1000
+    );
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
+    const rawBody = await readRequestText(
+      request,
+      MAX_SHARE_REQUEST_BODY_BYTES
+    );
+
+    if (rawBody === null) {
+      return NextResponse.json(
+        { error: "Request payload is too large" },
+        { status: 413 }
+      );
+    }
+
+    const body = JSON.parse(rawBody) as Partial<EncryptedShareBody>;
     const expiryMilliseconds = getExpiryMilliseconds(body.expiresIn);
 
     if (
       typeof body.ciphertext !== "string" ||
       body.ciphertext.length === 0 ||
+      !isBase64Url(body.ciphertext) ||
+      decodedBase64UrlLength(body.ciphertext) > MAX_CIPHERTEXT_BYTES ||
       typeof body.iv !== "string" ||
-      body.iv.length === 0 ||
+      body.iv.length !== 16 ||
+      !isBase64Url(body.iv) ||
       expiryMilliseconds === null ||
       typeof body.deleteAfterFirstView !== "boolean"
     ) {
@@ -59,13 +102,27 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
 
 export async function GET(request: Request) {
   try {
+    const allowed = await consumeRateLimit(
+      getClientIp(request),
+      "share:read",
+      120,
+      10 * 60 * 1000
+    );
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const url = new URL(request.url);
     const token = url.searchParams.get("token");
 
