@@ -178,7 +178,7 @@ export default function SharePage({
               <button type="button" onClick={copyText} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50">{copied ? "Copied ✓" : "Copy text"}</button>
             </div>
             <div className="p-5 sm:p-7"><pre className="whitespace-pre-wrap break-words font-sans text-[15px] leading-7 text-zinc-800 sm:text-base">
-              {share.text}
+              {data.text}
             </pre></div>
           </article>
         </section>
