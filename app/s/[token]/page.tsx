@@ -42,7 +42,7 @@ export default function SharePage({
 
     function updateCountdown() {
       const difference =
-        new Date(data.expiresAt).getTime() - Date.now();
+        new Date(data!.expiresAt).getTime() - Date.now();
 
       if (difference <= 0) {
         setRemaining("00:00:00");
