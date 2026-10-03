@@ -16,6 +16,7 @@ export default function SharePage({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [remaining, setRemaining] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,6 +116,17 @@ export default function SharePage({
         </div>
       </main>
     );
+  }
+
+  async function copyText() {
+    if (!data) return;
+    try {
+      await navigator.clipboard.writeText(data.text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   }
 
   if (!data) return null;
