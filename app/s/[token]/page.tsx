@@ -54,9 +54,10 @@ export default function SharePage({
   useEffect(() => {
     const share = data;
     if (!share) return;
+    const expiresAt = share.expiresAt;
 
     function updateCountdown() {
-      const difference = new Date(share.expiresAt).getTime() - Date.now();
+      const difference = new Date(expiresAt).getTime() - Date.now();
 
       if (difference <= 0) {
         setRemaining("00:00:00");
