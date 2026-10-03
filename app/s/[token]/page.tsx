@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { decryptText } from "@/lib/client-crypto";
 
 type ShareData = {
-  text: string;
+  ciphertext: string;
+  iv: string;
   expiresAt: string;
 };
 
@@ -17,6 +19,7 @@ export default function SharePage({
   const [loading, setLoading] = useState(true);
   const [remaining, setRemaining] = useState("");
   const [copied, setCopied] = useState(false);
+  const [plaintext, setPlaintext] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +41,19 @@ export default function SharePage({
         }
 
         setData(result);
+
+        const key = window.location.hash.slice(1);
+        if (!key) {
+          setError("This share link is missing its decryption key.");
+          return;
+        }
+
+        try {
+          const decrypted = await decryptText(result.ciphertext, result.iv, key);
+          if (!cancelled) setPlaintext(decrypted);
+        } catch {
+          if (!cancelled) setError("Unable to decrypt this share. The link may be invalid.");
+        }
       } catch {
         if (!cancelled) setError("Unable to load this share. Please try again.");
       } finally {
@@ -178,7 +194,7 @@ export default function SharePage({
               <button type="button" onClick={copyText} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50">{copied ? "Copied ✓" : "Copy text"}</button>
             </div>
             <div className="p-5 sm:p-7"><pre className="whitespace-pre-wrap break-words font-sans text-[15px] leading-7 text-zinc-800 sm:text-base">
-              {data.text}
+              {plaintext}
             </pre></div>
           </article>
         </section>
