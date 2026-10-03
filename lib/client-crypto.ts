@@ -21,9 +21,9 @@ export async function encryptText(text: string) {
     ["encrypt", "decrypt"]
   );
 
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iv = new Uint8Array(crypto.getRandomValues(new Uint8Array(12)));
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
+    { name: "AES-GCM", iv: iv as BufferSource },
     key,
     encoder.encode(text)
   );
@@ -51,9 +51,9 @@ export async function decryptText(
   );
 
   const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64UrlToBytes(iv) },
+    { name: "AES-GCM", iv: base64UrlToBytes(iv) as BufferSource },
     key,
-    base64UrlToBytes(ciphertext)
+    base64UrlToBytes(ciphertext) as BufferSource
   );
 
   return decoder.decode(plaintext);
