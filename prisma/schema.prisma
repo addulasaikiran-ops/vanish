@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Share {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  text        String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  destroyedAt DateTime?
+  status      String    @default("active")
+
+  @@index([expiresAt])
+}
