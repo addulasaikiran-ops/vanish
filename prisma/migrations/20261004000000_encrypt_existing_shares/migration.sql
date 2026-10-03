@@ -1,0 +1,10 @@
+BEGIN;
+
+DELETE FROM "Share";
+
+ALTER TABLE "Share" RENAME COLUMN "text" TO "ciphertext";
+
+ALTER TABLE "Share"
+ADD COLUMN "iv" TEXT NOT NULL;
+
+COMMIT;
