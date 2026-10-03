@@ -140,7 +140,7 @@ export default function SharePage({
     const share = data;
     if (!share) return;
     try {
-      await navigator.clipboard.writeText(share.text);
+      await navigator.clipboard.writeText(plaintext);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
