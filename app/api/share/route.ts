@@ -3,40 +3,36 @@ import { nanoid } from "nanoid";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
 
+type EncryptedShareBody = {
+  ciphertext: string;
+  iv: string;
+};
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const text = body.text;
+    const body = (await request.json()) as Partial<EncryptedShareBody>;
 
-    if (typeof text !== "string" || text.trim().length === 0) {
+    if (
+      typeof body.ciphertext !== "string" ||
+      body.ciphertext.length === 0 ||
+      typeof body.iv !== "string" ||
+      body.iv.length === 0
+    ) {
       return NextResponse.json(
-        { error: "Text is required" },
-        { status: 400 }
-      );
-    }
-
-    if (text.length > 1_000_000) {
-      return NextResponse.json(
-        { error: "Text is too large" },
+        { error: "Encrypted text is required" },
         { status: 400 }
       );
     }
 
     const token = nanoid(32);
-
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
-    const expiresAt = new Date(
-      Date.now() + 60 * 60 * 1000
-    );
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await prisma.share.create({
       data: {
         tokenHash,
-        text,
+        ciphertext: body.ciphertext,
+        iv: body.iv,
         expiresAt,
       },
     });
@@ -46,18 +42,15 @@ export async function POST(request: Request) {
       token,
       expiresAt,
     });
-  } catch (error) {
-    console.error("CREATE SHARE ERROR:", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }
     );
   }
 }
-export async function GET(
-  request: Request
-) {
+
+export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const token = url.searchParams.get("token");
@@ -69,38 +62,25 @@ export async function GET(
       );
     }
 
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     const share = await prisma.share.findUnique({
-      where: {
-        tokenHash,
-      },
+      where: { tokenHash },
     });
 
-    if (!share) {
+    if (!share || share.destroyedAt || share.expiresAt <= new Date()) {
       return NextResponse.json(
-        { error: "Share not found" },
-        { status: 404 }
-      );
-    }
-
-    if (share.destroyedAt || share.expiresAt <= new Date()) {
-      return NextResponse.json(
-        { error: "This share has expired" },
+        { error: "This share has expired or is unavailable" },
         { status: 410 }
       );
     }
 
     return NextResponse.json({
-      text: share.text,
+      ciphertext: share.ciphertext,
+      iv: share.iv,
       expiresAt: share.expiresAt,
     });
-  } catch (error) {
-    console.error("GET SHARE ERROR:", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }
