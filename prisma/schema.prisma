@@ -10,7 +10,8 @@ datasource db {
 model Share {
   id          String    @id @default(cuid())
   tokenHash   String    @unique
-  text        String
+  ciphertext  String
+  iv          String
   createdAt   DateTime  @default(now())
   expiresAt   DateTime
   destroyedAt DateTime?

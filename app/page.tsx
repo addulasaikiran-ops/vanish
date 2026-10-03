@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { encryptText } from "@/lib/client-crypto";
 
 const MAX_TEXT_LENGTH = 1_000_000;
 
@@ -36,10 +37,15 @@ export default function Home() {
     setLoading(true);
 
     try {
+      const encrypted = await encryptText(text);
+
       const response = await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({
+          ciphertext: encrypted.ciphertext,
+          iv: encrypted.iv,
+        }),
       });
 
       const result = await response.json();
@@ -49,7 +55,9 @@ export default function Home() {
         return;
       }
 
-      setShareUrl(`${window.location.origin}/s/${result.token}`);
+      setShareUrl(
+        `${window.location.origin}/s/${result.token}#${encrypted.key}`
+      );
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
