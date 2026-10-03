@@ -52,10 +52,11 @@ export default function SharePage({
   }, [params]);
 
   useEffect(() => {
-    if (!data) return;
+    const share = data;
+    if (!share) return;
 
     function updateCountdown() {
-      const difference = new Date(data.expiresAt).getTime() - Date.now();
+      const difference = new Date(share.expiresAt).getTime() - Date.now();
 
       if (difference <= 0) {
         setRemaining("00:00:00");
@@ -170,10 +171,14 @@ export default function SharePage({
             </div>
           </div>
 
-          <article className="min-h-[55vh] rounded-[28px] border border-zinc-200 bg-white p-5 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.18)] sm:min-h-[60vh] sm:p-7">
-            <pre className="whitespace-pre-wrap break-words font-sans text-[15px] leading-7 text-zinc-800 sm:text-base">
+          <article className="min-h-[55vh] rounded-[28px] border border-zinc-200 bg-white shadow-[0_24px_80px_-28px_rgba(0,0,0,0.18)] sm:min-h-[60vh]">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-3 sm:px-7">
+              <span className="text-xs text-zinc-400">Read-only shared text</span>
+              <button type="button" onClick={copyText} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50">{copied ? "Copied ✓" : "Copy text"}</button>
+            </div>
+            <div className="p-5 sm:p-7"><pre className="whitespace-pre-wrap break-words font-sans text-[15px] leading-7 text-zinc-800 sm:text-base">
               {data.text}
-            </pre>
+            </pre></div>
           </article>
         </section>
 
